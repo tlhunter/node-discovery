@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const http = require('http');
 
 const POLL_INTERVAL = 10 * 1000;
