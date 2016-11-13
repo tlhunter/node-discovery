@@ -3,6 +3,8 @@
 Rudimentary NodeJS Discovery service for illustration purposes.
 This project will accompany a book I'm currently writing.
 
+![Overview Diagram](./overview.png)
+
 ## Usage
 
 
