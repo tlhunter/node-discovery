@@ -1,12 +1,28 @@
-# node-discovery
+# Rudimentary Application Discovery
 
-Rudimentary NodeJS Discovery service for illustration purposes.
+This project is a rudimentary Discovery service for illustrating how the whole Discovery process works.
 This project will accompany a book I'm currently writing.
+
+Application Discovery is the process of finding a provider of a service (host:port) using just the providers name.
+Providers register themselves with a Discovery service, giving a name and a host and a port.
+The Discovery service needs to make sure the Providers are still healthy, either by making a request to the Providers, or with the Providers making a request to Discovery (this example does the prior).
+Health checks are performed using checks at regular intervals.
+
+Providers need to gracefully tell the Discovery service when they're ending to prevent it from receiving requests after dyinig and before a health poll.
 
 ![Overview Diagram](./overview.png)
 
 ## Usage
 
+* Clone this repository
+* Install the dependencies `npm install`
+* Start the Discovery Service `./server.js 32000 10000 4000`
+* Start a Client Provider `./client-provider.js 2001 localhost:32000`
+* Start another Client Provider `./client-provider.js 2002 localhost:32000`
+* Start a Client Consumer and wait a few seconds `./client-consumer.js localhost:32000`
+* Notice how the Consumer gets data from both Providers
+* Kill one of the Client Providers (Ctrl+C)
+* Notice how the Consumer gets data from one Provider
 
 ### Server
 
@@ -166,14 +182,3 @@ ok
 
 This process doesn't have any endpoints.
 It will randomly ask for data from a Provider.
-
-
-### Example Scenarios
-
-* Start the Discovery Service.
-* Start the Client Provider.
-* Start another Client Provider.
-* Start a Client Consumer and wait a few seconds.
-* Kill one of the Client Providers.
-
-Notice how the Client Consumer goes from getting data from both Providers to just one.
