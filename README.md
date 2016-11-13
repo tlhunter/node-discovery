@@ -34,7 +34,7 @@ GET /services
 
 ```json
 {
-  "service_alpha": [
+  "random_number": [
     {
       "id": "ec110bf1-0227-470d-9586-33e2d469284c",
       "host": "localhost",
@@ -46,7 +46,7 @@ GET /services
       "port": 9002
     }
   ],
-  "service_beta": [
+  "database": [
     {
       "id": "6fbd6f56-03e0-45bd-8529-42319d550f70",
       "host": "localhost",
@@ -113,12 +113,12 @@ DELETE /services/{service_name}/{instance_id}
 ### Clients
 
 ```shell
-# ./client-provider.js <client_port> <discovery_port=32000>
-./client-provider.js 2001 32000 # Ctrl+C later
-./client-provider.js 2002 32000
+# ./client-provider.js <client_port> <discovery_address=localhost:32000>
+./client-provider.js 2001 localhost:32000 # Ctrl+C later
+./client-provider.js 2002 localhost:32000
 
-# ./client-consumer.js <client_port> <discovery_port=32000>
-./client-consumer.js 3001 32000
+# ./client-consumer.js <discovery_address=localhost:32000>
+./client-consumer.js localhost:32000
 ```
 
 #### Client Provider Endpoints

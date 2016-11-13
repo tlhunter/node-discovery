@@ -15,6 +15,7 @@ let instances = {};
 
 // Client Creation: Get a list of all instances
 app.get('/services', (req, res) => {
+  console.log('GET /services');
   res.status(200).json(instances);
 });
 
@@ -24,11 +25,15 @@ app.post('/services/:service_name', (req, res) => {
   let host = req.body.host;
   let port = parseInt(req.body.port || 80);
 
+  console.log(`GET /services/${service_name}`);
+
   if (!host || !port) {
     return res.status(400).json({error: 'must_provide_host_port'});
   }
 
   let instance = addInstance(service_name, host, port);
+
+  console.log(`Client registering as ${service_name}/${instance.id} @ ${host}:${port}`);
 
   res.status(202).json(instance);
 });
@@ -38,9 +43,12 @@ app.delete('/services/:service_name/:instance_id', (req, res) => {
   let service_name = req.params.service_name;
   let instance_id = req.params.instance_id;
 
+  console.log(`DELETE /services/${service_name}/${instance_id}`);
+
   let instance = removeInstance(service_name, instance_id);
 
   if (instance) {
+    console.log(`Client de-registering as ${service_name}/${instance_id} @ ${instance.host}:${instance.port}`);
     return res.status(200).json(instance);
   }
 
