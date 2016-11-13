@@ -1,97 +1,115 @@
 #!/usr/bin/env node
 
-const http = require('http');
+const uuid = require('uuid');
+const request = require('request');
+const express = require('express');
+const app = express();
+const bodyParser = require('body-parser');
+app.use(bodyParser.json());
 
-const POLL_INTERVAL = 10 * 1000;
-const PORT = 32000;
+const PORT = parseInt(process.argv[2]) || 32000;
+const POLL_INTERVAL = parseInt(process.argv[3]) || 10 * 1000;
+const THRESHOLD = parseInt(process.argv[4]) || 4 * 1000;
 
 let instances = {};
 
-let server = http.createServer((req, res) => {
-  console.log(req.method, req.url);
-
-  if (req.method === 'get' && req.url === '/') {
-    // Get entire state of discovery
-    res.writeHead(200, {'Content-Type': 'application/json'});
-    res.end(JSON.stringify(instances));
-  } else if (req.method === 'post' && req.url.match(/\/services\/([a-zA-Z0-9-_]+)\/?/)) {
-    // Create a new discovery instance
-    let name; // grab name from URL
-    let body; // grab body from request
-    let data = addInstance(name, body.host, body.port);
-
-    res.writeHead(202, {'Content-Type': 'application/json'});
-    res.end(JSON.stringify(instance));
-  } else if (req.method === 'delete' && req.url.match(/\/services\/([a-zA-Z0-9-_]+)\/([a-fA-F0-9-]+)/)) {
-  // Destroy a discovery instance
-    let name;
-    let id;
-
-    let instance = removeInstance(name, id);
-
-    if (instance) {
-      res.writeHead(200, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify(instance));
-    }
-
-    res.writeHead(404, {'Content-Type': 'application/json'});
-    res.end('{"error": "no_instances_found"}');
-  } else {
-    res.writeHead(404, {'Content-Type': 'application/json'});
-    res.end('{"error": "invalid_operation"}');
-  }
+// Client Creation: Get a list of all instances
+app.get('/services', (req, res) => {
+  res.status(200).json(instances);
 });
 
-// Make requests to services
-setInterval(() => {
-  for (let types of instances) {
-    for (let instance of types) {
-      // make request to `http://{instance.host}:{instance.port}/health`;
-      // have a POLL_INTERVAL/2 timeout
-      // remove from list if timeout or status code isn't >= 200 && < 300
-    }
+// Client appears: Add service to list
+app.post('/services/:service_name', (req, res) => {
+  let service_name = req.params.service_name;
+  let host = req.body.host;
+  let port = parseInt(req.body.port || 80);
+
+  if (!host || !port) {
+    return res.status(400).json({error: 'must_provide_host_port'});
   }
+
+  let instance = addInstance(service_name, host, port);
+
+  res.status(202).json(instance);
+});
+
+// Client goes away: Remove instance ID from list
+app.delete('/services/:service_name/:instance_id', (req, res) => {
+  let service_name = req.params.service_name;
+  let instance_id = req.params.instance_id;
+
+  let instance = removeInstance(service_name, instance_id);
+
+  if (instance) {
+    return res.status(200).json(instance);
+  }
+
+  res.status(404).json({error: 'instance_not_found'});
+});
+
+app.listen(PORT, (err) => {
+  console.log('listening');
+});
+
+// Check health of each registered service
+setInterval(() => {
+  Object.keys(instances).forEach((service_name) => {
+    instances[service_name].forEach((instance) => {
+      checkHealth(instance.host, instance.port, (err, alive) => {
+        if (alive) return;
+        console.error(`Instance failed health check! ${service_name}/${instance.id}`);
+        removeInstance(service_name, instance.id);
+      });
+    });
+  });
 }, POLL_INTERVAL);
 
 function createCollection(name) {
   if (!instances[name]) {
-    instances[name] = {};
+    instances[name] = [];
   }
 }
 
 function addInstance(name, host, port) {
   createCollection(name);
 
-  let id = uuid();
+  let id = uuid.v4();
+  let instance = { id, host, port };
 
-  let instance = {
-    id: id,
-    host: host,
-    port: port
-  };
-
-  instances[name] = instance;
+  instances[name].push(instance);
 
   return instance;
 }
 
 function removeInstance(name, id) {
+  let instance = false;
+
   if (!instances[name]) {
-    return false;
+    return instance;
   }
 
   for (let i = 0; i < instances[name].length; i++) {
     if (instances[name][i].id === id) {
-      return instances[name].splice(i, 0);
+      instance = instances[name].splice(i, 1);
+      break;
     }
   }
 
-  return false;
+  if (!instances[name].length) {
+    delete instances[name];
+  }
+
+  return instance;
 }
 
-server.listen(PORT);
+function checkHealth(host, port, callback) {
+  let url = `http://${host}:${port}/health`;
 
-function uuid() {
-  function s4() { return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1); }
-  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+  request(url, {timeout: THRESHOLD}, (err, response) => {
+    if (err || response.statusCode >= 400) {
+      return callback(null, false);
+    }
+
+    callback(null, true);
+  });
 }

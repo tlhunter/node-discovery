@@ -1,0 +1,30 @@
+{
+  "name": "node-discovery-example",
+  "version": "0.0.1",
+  "description": "Example Node.js based discovery service",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tlhunter/node-discovery.git"
+  },
+  "keywords": [
+    "discovery",
+    "soa"
+  ],
+  "author": "Thomas Hunter II <me@thomashunter.name>",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/tlhunter/node-discovery/issues"
+  },
+  "homepage": "https://github.com/tlhunter/node-discovery#readme",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "request": "^2.78.0",
+    "uuid": "^2.0.3"
+  }
+}
